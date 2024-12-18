@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nestjs
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - nestjs-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs-api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/nestjs?schema=public"
+    command: >
+      sh -c "
+        npx prisma generate &&
+        npx prisma db push &&
+        npm run start:prod
+      "
+    networks:
+      - nestjs-network
+
+volumes:
+  postgres:
+    name: nest-db
+
+networks:
+  nestjs-network:
